@@ -1,0 +1,155 @@
+
+<!-- Alpine.js component with modal -->
+<div x-data="quickViewProduct()" x-init="init()" x-ref="quickview" class="fixed top-0 right-0" style="z-index: 1000; max-width: 500px;">
+    <div
+        x-show="showModal"
+        x-transition:enter="transform transition ease-in-out duration-500 sm:duration-700"
+        x-transition:enter-start="translate-x-full"
+        x-transition:enter-end="translate-x-0"
+        x-transition:leave="transform transition ease-in-out duration-500 sm:duration-700"
+        x-transition:leave-start="translate-x-0"
+        x-transition:leave-end="translate-x-full"
+        tabindex="-1"
+        role="dialog"
+        class="modal fade"
+        style="display: none;"
+        aria-hidden="true"
+    >
+        <div class="modal-dialog">
+            <div class="overflow-scroll modal-content bg-white">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" @click="closeModal">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <h4 class="modal-title" x-text="product.name"></h4>
+                </div>
+                <div class="modal-body">
+                    <img :src="product.image" alt="" x-show="product.image">
+                    <div x-html="product.short_description"></div>
+                    <div x-show="product.specifications">
+                        <h5>Specifications:</h5>
+                        <ul>
+                            <template x-for="(value, key) in product.specifications" :key="key">
+                                <li><strong x-text="value.label"></strong>: <span x-text="value.value"></span></li>
+                            </template>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" @click="closeModal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function quickViewProduct() {
+        return {
+            product: {
+                name: 'Product Title',
+                description: 'Description',
+                specifications: null
+            },
+            showModal: false,
+            preloadData: {},
+            fetchProductData(sku, preload = false) {
+                // Fetch product data and either preload it or set it as current product
+                fetch('/quickviewproduct/index/view?sku=' + sku)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            this.preloadData[sku] = data.product;
+                            if(!preload) {
+                                this.product = data.product;
+                                this.showModal = true;
+                            }
+                            document.querySelector('.quick-product-view').classList.remove("loading");
+                        } else {
+                            console.error('Error:', data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching product data:', error);
+                    });
+            },
+            preloadProduct(sku) {
+                this.fetchProductData(sku, true);
+            },
+            loadProductData(sku) {
+                if (this.preloadData[sku]) {
+                    this.product = this.preloadData[sku];
+                    this.showModal = true;
+                } else {
+                    this.fetchProductData(sku);
+                }
+            },
+            closeModal() {
+                this.showModal = false;
+            },
+            init() {
+                window.quickViewProductComponent = this;
+            }
+        };
+    }
+
+    // Global function to show product in quick view
+    window.showQuickViewProduct = function(event, sku) {
+
+        event.preventDefault();
+        this.addClass("loading");
+
+        if (window.quickViewProductComponent) {
+            window.quickViewProductComponent.loadProductData(sku);
+        } else {
+            console.error('Quick view component is not initialized.');
+        }
+    }
+
+    window.preloadQuickViewProducts = function(skus) {
+        if (window.quickViewProductComponent) {
+            //skus.forEach(sku => window.quickViewProductComponent.preloadProduct(sku));
+        } else {
+            console.error('Quick view component is not initialized.');
+        }
+    }
+
+    function handleProductViewClick(event)
+    {
+        event.preventDefault();
+        event.stopPropagation()
+
+        var sku = this.getAttribute('data-sku');
+        this.classList.add("loading");
+
+        if (window.quickViewProductComponent) {
+            window.quickViewProductComponent.loadProductData(sku);
+        } else {
+            console.error('Quick view component is not initialized.');
+        }
+    }
+
+    // Attach the event handler to all elements with the class 'quick-product-view'.
+    document.addEventListener('DOMContentLoaded', function() {
+        var productViewElements = document.getElementsByClassName('quick-product-view');
+        Array.from(productViewElements).forEach(function (element) {
+            element.addEventListener('click', handleProductViewClick);
+        });
+    });
+
+</script>
+
+<style>
+    .quick-product-view.loading {
+        animation-name: color;
+        animation-duration: 2s;
+        animation-iteration-count: infinite;
+        animation-direction: alternate-reverse;
+        animation-timing-function: ease;
+    }
+    @keyframes color {
+        to {
+            color: grey;
+        }
+    }
+</style>

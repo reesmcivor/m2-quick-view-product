@@ -1,0 +1,13 @@
+<?php if($sku = $block->getSku()) : ?>
+
+    <div class="quick-product-view" data-sku="<?php echo $sku; ?>">
+        <?php echo $block->getButtonText(); ?>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            window.preloadQuickViewProducts(['<?php echo $sku; ?>']);
+        });
+    </script>
+
+<?php endif; ?>

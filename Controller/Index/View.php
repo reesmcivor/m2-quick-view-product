@@ -35,12 +35,31 @@ class View extends Action
             $product = $this->productRepository->get($sku);
             return $result->setData([
                 'success' => true,
-                'name' => $product->getName(),
-                'image' => $product->getThumbnail(), // Get the image URL accordingly
-                'description' => strip_tags($product->getDescription()),
+                'product' => [
+                    'name' => $product->getName(),
+                    'image' => $product->getThumbnail(),
+                    'short_description' => $product->getShortDescription(),
+                    'description' => strip_tags($product->getDescription()),
+                    'specifications' => $this->getProductSpecs($product)
+                ]
             ]);
         } catch (NoSuchEntityException $e) {
             return $result->setData(['success' => false, 'message' => 'Product not found.']);
         }
+    }
+
+    protected function getProductSpecs( $product ) : array
+    {
+        $attributesData = [];
+        foreach ($product->getAttributes() as $attribute) {
+            if ($attribute->getIsVisibleOnFront() && $attribute->getFrontend()->getValue($product)) {
+                $attributeCode = $attribute->getAttributeCode();
+                $attributesData[$attributeCode] = [
+                    'label' => $attribute->getStoreLabel(),
+                    'value' => $attribute->getFrontend()->getValue($product)
+                ];
+            }
+        }
+        return $attributesData;
     }
 }
