@@ -53,7 +53,7 @@
             },
             showModal: false,
             preloadData: {},
-            fetchProductData(sku, preload = false) {
+            fetchProductData(sku, trigger, preload = false) {
                 // Fetch product data and either preload it or set it as current product
                 fetch('/quickviewproduct/index/view?sku=' + sku)
                     .then(response => response.json())
@@ -64,7 +64,19 @@
                                 this.product = data.product;
                                 this.showModal = true;
                             }
-                            document.querySelector('.quick-product-view').classList.remove("loading");
+
+                            try {
+                                //trigger.removeClass('loading');
+                                // remove loading from all class's that have quick-product-view
+                                document.querySelectorAll('.quick-product-view').forEach(function (element) {
+                                    element.classList.remove('loading');
+                                });
+
+                            } catch (e) {
+
+                            }
+
+
                         } else {
                             console.error('Error:', data.message);
                         }
@@ -73,15 +85,15 @@
                         console.error('Error fetching product data:', error);
                     });
             },
-            preloadProduct(sku) {
-                this.fetchProductData(sku, true);
+            preloadProduct(sku, trigger) {
+                this.fetchProductData(sku, trigger, true);
             },
-            loadProductData(sku) {
+            loadProductData(sku, trigger) {
                 if (this.preloadData[sku]) {
                     this.product = this.preloadData[sku];
                     this.showModal = true;
                 } else {
-                    this.fetchProductData(sku);
+                    this.fetchProductData(sku, trigger, false);
                 }
             },
             closeModal() {
@@ -97,10 +109,12 @@
     window.showQuickViewProduct = function(event, sku) {
 
         event.preventDefault();
-        this.addClass("loading");
+
+        let trigger = this;
+        trigger.addClass("loading");
 
         if (window.quickViewProductComponent) {
-            window.quickViewProductComponent.loadProductData(sku);
+            window.quickViewProductComponent.loadProductData(sku, trigger, false);
         } else {
             console.error('Quick view component is not initialized.');
         }
@@ -119,11 +133,13 @@
         event.preventDefault();
         event.stopPropagation()
 
-        var sku = this.getAttribute('data-sku');
-        this.classList.add("loading");
+        let sku = this.getAttribute('data-sku');
+        let trigger = this;
+
+        trigger.classList.add("loading");
 
         if (window.quickViewProductComponent) {
-            window.quickViewProductComponent.loadProductData(sku);
+            window.quickViewProductComponent.loadProductData(sku, trigger);
         } else {
             console.error('Quick view component is not initialized.');
         }
@@ -133,23 +149,28 @@
     document.addEventListener('DOMContentLoaded', function() {
         var productViewElements = document.getElementsByClassName('quick-product-view');
         Array.from(productViewElements).forEach(function (element) {
-            element.addEventListener('click', handleProductViewClick);
+            // disable this...
+            // element.addEventListener('click', handleProductViewClick);
         });
     });
 
 </script>
 
 <style>
-    .quick-product-view.loading {
-        animation-name: color;
-        animation-duration: 2s;
-        animation-iteration-count: infinite;
-        animation-direction: alternate-reverse;
-        animation-timing-function: ease;
+    .quick-product-view svg {
+        border: none;
     }
-    @keyframes color {
-        to {
-            color: grey;
+    .quick-product-view.loading {
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        50% {
+            transform: scale(1.25);
+            opacity: 0.7;
         }
     }
 </style>

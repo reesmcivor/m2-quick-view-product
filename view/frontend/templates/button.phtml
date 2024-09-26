@@ -1,7 +1,9 @@
 <?php if($sku = $block->getSku()) : ?>
 
-    <div class="quick-product-view" data-sku="<?php echo $sku; ?>">
-        <?php echo $block->getButtonText(); ?>
+    <div class="quick-product-view" data-sku="<?php echo $sku; ?>" data-url="<?php echo $block->getProductUrl(); ?>">
+        <a href="<?php echo $block->getProductUrl(); ?>" target="_blank" title="View <?php echo $sku; ?>">
+            <?php echo $block->getButtonText(); ?>
+        </a>
     </div>
 
     <script>
