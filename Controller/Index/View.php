@@ -1,6 +1,7 @@
 <?php
 namespace ReesMcIvor\QuickViewProduct\Controller\Index;
 
+use Magento\Catalog\Helper\Image;
 use Magento\Framework\App\Action\Action;
 use Magento\Framework\App\Action\Context;
 use Magento\Framework\Controller\Result\JsonFactory;
@@ -11,15 +12,18 @@ class View extends Action
 {
     protected $resultJsonFactory;
     protected $productRepository;
+    protected $imageHelper;
 
     public function __construct(
         Context $context,
         JsonFactory $resultJsonFactory,
-        ProductRepositoryInterface $productRepository
+        ProductRepositoryInterface $productRepository,
+        Image $imageHelper
     ) {
         parent::__construct($context);
         $this->resultJsonFactory = $resultJsonFactory;
         $this->productRepository = $productRepository;
+        $this->imageHelper = $imageHelper;
     }
 
     public function execute()
@@ -33,13 +37,18 @@ class View extends Action
 
         try {
             $product = $this->productRepository->get($sku);
+            $image = $this->imageHelper->init($product, 'product_page_image_small')
+                ->setImageFile($product->getSmallImage()) // image,small_image,thumbnail
+                ->resize(380)
+                ->getUrl();
+
             return $result->setData([
                 'success' => true,
                 'product' => [
                     'name' => $product->getName(),
-                    'image' => $product->getThumbnail(),
+                    'image' => $image,
                     'short_description' => $product->getShortDescription(),
-                    'description' => strip_tags($product->getDescription()),
+                    'description' => $product->getDescription(),
                     'specifications' => $this->getProductSpecs($product)
                 ]
             ]);

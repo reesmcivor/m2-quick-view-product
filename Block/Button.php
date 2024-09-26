@@ -2,7 +2,9 @@
 
 namespace ReesMcIvor\QuickViewProduct\Block;
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\View\Element\Template;
+use Magento\ConfigurableProduct\Model\ResourceModel\Product\Type\Configurable;
 
 class Button extends Template
 {
@@ -10,22 +12,33 @@ class Button extends Template
     public string $sku = "";
     public string $buttonText = "";
     private $productRepository;
+    private $configurableProductType;
 
     public function __construct(
         Template\Context $context,
-        \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
+        ProductRepositoryInterface $productRepository,
+        Configurable $configurableProductType,
         array $data = [],
     )
     {
         $this->productRepository = $productRepository;
+        $this->configurableProductType = $configurableProductType;
         parent::__construct($context, $data);
     }
 
     public function getProductUrl()
     {
-        // Get product by SKU
-        $this->product = $this->productRepository->get($this->sku);
-        return $this->product->getProductUrl();
+        // Load the product by SKU
+        $product = $this->productRepository->get($this->sku);
+        $parentIds = $this->configurableProductType->getParentIdsByChild($product->getId());
+
+        if (!empty($parentIds)) {
+            $parentProduct = $this->productRepository->getById($parentIds[0]);
+            return $parentProduct->getProductUrl();
+        }
+
+        return $product->getProductUrl();
+
     }
 
     public function setSku( $sku = '' )
