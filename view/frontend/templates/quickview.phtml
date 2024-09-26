@@ -1,45 +1,48 @@
 
 <!-- Alpine.js component with modal -->
 <div x-data="quickViewProduct()" x-init="init()" x-ref="quickview" class="fixed top-0 right-0" style="z-index: 1000; max-width: 500px;">
-    <div
-        x-show="showModal"
-        x-transition:enter="transform transition ease-in-out duration-500 sm:duration-700"
-        x-transition:enter-start="translate-x-full"
-        x-transition:enter-end="translate-x-0"
-        x-transition:leave="transform transition ease-in-out duration-500 sm:duration-700"
-        x-transition:leave-start="translate-x-0"
-        x-transition:leave-end="translate-x-full"
-        tabindex="-1"
-        role="dialog"
-        class="modal fade"
-        style="display: none;"
-        aria-hidden="true"
-    >
-        <div class="modal-dialog">
-            <div class="overflow-scroll modal-content bg-white">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" @click="closeModal">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                    <h4 class="modal-title" x-text="product.name"></h4>
-                </div>
-                <div class="modal-body">
-                    <img :src="product.image" alt="" x-show="product.image">
-                    <div x-html="product.short_description"></div>
-                    <div x-show="product.specifications">
-                        <h5>Specifications:</h5>
-                        <ul>
-                            <template x-for="(value, key) in product.specifications" :key="key">
-                                <li><strong x-text="value.label"></strong>: <span x-text="value.value"></span></li>
-                            </template>
-                        </ul>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" @click="closeModal">Close</button>
-                </div>
-            </div>
-        </div>
+
+
+    <?php
+
+    /** @var \Magento\Framework\Escaper $escaper */
+    /** @var \Hyva\Theme\Model\ViewModelRegistry $viewModels */
+    /** @var \Hyva\Theme\ViewModel\Modal $modalViewModel */
+    $modalViewModel = $viewModels->require(\Hyva\Theme\ViewModel\Modal::class);
+
+    ?>
+
+    <div x-data="hyva.modal()">
+        <?= $modalViewModel->createModal()->withContent(<<<END_OF_CONTENT
+
+<div class="flex flex-col md:flex-row gap-5">
+    <div class="flex-1">
+        <h3 x-show="product.name" x-text="product.name" class="text-2xl font-semibold mb-2"></h3>
+        <div x-html="product.short_description"></div>
+        <img :src="product.image" alt="" x-show="product.image">
+    </div>
+    <div class="flex-1" x-show="product.specifications">
+        <h3 class="text-2xl font-semibold mb-2">Specification</h3>
+        <ul>
+            <template x-for="(value, key) in product.specifications" :key="key">
+                <li><strong x-text="value.label"></strong>: <span x-text="value.value"></span></li>
+            </template>
+        </ul>
+    </div>
+</div>
+
+<div class="mt-20 flex justify-between gap-2">
+<button @click="hide" type="button" class="btn btn-primary">
+    {$escaper->escapeHtml(__('Close'))}
+</button>
+</div>
+
+END_OF_CONTENT
+        )->positionCenter()
+            ->withDialogRefName('my-modal')
+            ->withAriaLabelledby('the-label')
+            ->addDialogClass('border', 'border-10', 'border-blue-800', 'md:max-w-xl lg:max-w-5xl max-w-full')
+        ?>
     </div>
 </div>
 
@@ -62,8 +65,13 @@
                             this.preloadData[sku] = data.product;
                             if(!preload) {
                                 this.product = data.product;
-                                this.showModal = true;
+                                //this.showModal = true;
+                                window.dispatchEvent(
+                                    new CustomEvent('hyva-modal-show', {detail: {dialog: 'my-modal'}})
+                                );
+
                             }
+
 
                             try {
                                 //trigger.removeClass('loading');
@@ -149,7 +157,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         var productViewElements = document.getElementsByClassName('quick-product-view');
         Array.from(productViewElements).forEach(function (element) {
-            // element.addEventListener('click', handleProductViewClick);
+            element.addEventListener('click', handleProductViewClick);
         });
     });
 
@@ -173,3 +181,5 @@
         }
     }
 </style>
+
+
